@@ -1,5 +1,6 @@
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, FieldErrors } from 'react-hook-form'
 import { DevTool } from "@hookform/devtools";
+import { useEffect } from "react";
 
 type FormValues = {
     username: string
@@ -13,7 +14,11 @@ type FormValues = {
     phNumbers: {
         number: string
     }[]
+    age: number,
+    dob: Date
 }
+
+let renderCount = 0
 
 export const YouTubeForm = () => {
 
@@ -27,12 +32,15 @@ export const YouTubeForm = () => {
                     facebook: ''
                 },
                 phoneNumbers: ['', ''],
-                phNumbers: [{ number: '' }]
-            }
+                phNumbers: [{ number: '' }],
+                age: 0,
+                dob: new Date()
+            },
         })
 
-        const { register, control, handleSubmit, formState } = form
-        const { errors } = formState
+        const { register, control, handleSubmit, formState, watch, getValues, setValue, reset } = form
+        const { errors, isSubmitSuccessful } = formState
+
 
         const { fields, append, remove } = useFieldArray({
             name: 'phNumbers',
@@ -43,12 +51,42 @@ export const YouTubeForm = () => {
             console.log('Form Submitted', data)
         }
 
+        const handleGetValues = () => {
+            console.log('Get values', getValues('social'))
+        }
 
+        const handleSetValue = () => {
+            setValue('username', '', {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true
+            })
+        }
+
+        const onError = (errors: FieldErrors<FormValues>) => {
+            console.log('Form Errors', errors)
+        }
+
+
+        useEffect(() => {
+            const subscription = watch((value) => {
+                console.log(value)
+            })
+            return () => subscription.unsubscribe()
+        }, [watch])
+
+        useEffect(() => {
+            if (isSubmitSuccessful) {
+                reset()
+            }
+        }, [isSubmitSuccessful, reset])
+
+        renderCount++
         return (
             <div>
-                <h1>YouTube Form</h1>
-
-                <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                <h1>YouTube Form {renderCount / 2}</h1>
+                {/*<h2>Watched value: {JSON.stringify(watch)}</h2>*/}
+                <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
                     <div className='form-control'>
                         <label htmlFor="username">Username</label>
                         <input type="text" id="username" {...register('username', {
@@ -82,15 +120,16 @@ export const YouTubeForm = () => {
 
                     <div className='form-control'>
                         <label htmlFor="channel">Channel</label>
-                        <input type="text" id="channel" {...register('channel', {
-                            required: 'Channel is required'
-                        })} />
+                        <input type="text" id="channel" {...register('channel')} />
                         <p className='error'>{errors.channel?.message}</p>
                     </div>
 
                     <div className='form-control'>
                         <label htmlFor="twitter">Twitter</label>
-                        <input type="text" id="twitter" {...register('social.twitter')} />
+                        <input type="text" id="twitter" {...register('social.twitter', {
+                            disabled: watch('channel') === '',
+                            required: 'Enter twitter'
+                        })} />
                     </div>
 
                     <div className='form-control'>
@@ -127,7 +166,27 @@ export const YouTubeForm = () => {
                         </div>
                     </div>
 
+                    <div className='form-control'>
+                        <label htmlFor="age">Age</label>
+                        <input type="number" id="age" {...register('age', {
+                            valueAsNumber: true,
+                            required: 'Age is required'
+                        })} />
+                        <p className='error'>{errors.age?.message}</p>
+                    </div>
+
+                    <div className='form-control'>
+                        <label htmlFor="dob">Date of Birth</label>
+                        <input type="date" id="dob" {...register('dob', {
+                            valueAsDate: true,
+                        })} />
+                        <p className='error'>{errors.dob?.message}</p>
+                    </div>
+
                     <button>Submit</button>
+                    <button type='button' onClick={() => reset()}>Reset</button>
+                    <button type='button' onClick={handleGetValues}>Get Values</button>
+                    <button type='button' onClick={handleSetValue}>Set Value</button>
                 </form>
                 <DevTool control={control} />
             </div>
