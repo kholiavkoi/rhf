@@ -36,9 +36,10 @@ export const YouTubeForm = () => {
                 age: 0,
                 dob: new Date()
             },
+            mode: 'onBlur'
         })
 
-        const { register, control, handleSubmit, formState, watch, getValues, setValue, reset } = form
+        const { register, control, handleSubmit, formState, watch, getValues, setValue, reset, trigger } = form
         const { errors, isSubmitSuccessful } = formState
 
 
@@ -112,6 +113,11 @@ export const YouTubeForm = () => {
                                 },
                                 notBlackListed: (fieldValue) => {
                                     return !fieldValue.endsWith('baddomain.com') || 'This domain is not supported'
+                                },
+                                emailAvailable: async (fieldValue) => {
+                                    const response = await fetch(`https://jsonplaceholder.typicode.com/users?email=${fieldValue}`)
+                                    const data = await response.json()
+                                    return data.length == 0 || 'Email already exists'
                                 }
                             }
                         })} />
@@ -120,7 +126,9 @@ export const YouTubeForm = () => {
 
                     <div className='form-control'>
                         <label htmlFor="channel">Channel</label>
-                        <input type="text" id="channel" {...register('channel')} />
+                        <input type="text" id="channel" {...register('channel', {
+                            required: 'Field is required'
+                        })} />
                         <p className='error'>{errors.channel?.message}</p>
                     </div>
 
@@ -187,6 +195,7 @@ export const YouTubeForm = () => {
                     <button type='button' onClick={() => reset()}>Reset</button>
                     <button type='button' onClick={handleGetValues}>Get Values</button>
                     <button type='button' onClick={handleSetValue}>Set Value</button>
+                    <button type='button' onClick={() => trigger('channel')}>Validate</button>
                 </form>
                 <DevTool control={control} />
             </div>
